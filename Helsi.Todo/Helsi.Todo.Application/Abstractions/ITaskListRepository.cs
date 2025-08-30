@@ -6,6 +6,8 @@ namespace Helsi.Todo.Application.Abstractions;
 public interface ITaskListRepository
 {
     Task<TaskList?> GetByIdAsync(Guid id, CancellationToken ct);
+    Task<PagedResult<TaskList>> GetForUserAsync(Guid userId, int page, int size, CancellationToken ct);
+
     Task AddAsync(TaskList entity, CancellationToken ct);
     void Update(TaskList entity);
     void Remove(TaskList entity);
@@ -15,5 +17,5 @@ public interface ITaskListRepository
     Task RemoveUserLinkAsync(Guid listId, Guid userId, CancellationToken ct);
     Task<IReadOnlyList<Guid>> GetLinkedUsersAsync(Guid listId, CancellationToken ct);
 
-    Task<PagedResult<TaskList>> GetForUserAsync(Guid userId, int page, int size, CancellationToken ct);
+    Task<int> SaveChangesAsync(CancellationToken ct);
 }

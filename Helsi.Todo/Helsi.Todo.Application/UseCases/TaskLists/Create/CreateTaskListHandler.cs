@@ -6,12 +6,10 @@ namespace Helsi.Todo.Application.UseCases.TaskLists.Create;
 public class CreateTaskListHandler
 {
     private readonly ITaskListRepository _taskListRepo;
-    private readonly IUnitOfWork _uow;
 
-    public CreateTaskListHandler(ITaskListRepository taskListRepo, IUnitOfWork uow)
+    public CreateTaskListHandler(ITaskListRepository taskListRepo)
     {
         _taskListRepo = taskListRepo;
-        _uow = uow;
     }
 
     public async Task<Guid> HandleAsync(CreateTaskListCommand cmd, CancellationToken ct)
@@ -19,7 +17,7 @@ public class CreateTaskListHandler
         var list = new TaskList(cmd.UserId, cmd.Title);
 
         await _taskListRepo.AddAsync(list, ct);
-        await _uow.SaveChangesAsync(ct);
+        await _taskListRepo.SaveChangesAsync(ct);
 
         return list.Id;
     }
