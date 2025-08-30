@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Helsi.Todo.Application\Helsi.Todo.Application.csproj" />
+    <ProjectReference Include="..\Helsi.Todo.Infrastructure\Helsi.Todo.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
