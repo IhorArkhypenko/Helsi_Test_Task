@@ -1,3 +1,4 @@
+using FluentValidation.AspNetCore;
 using Helsi.Todo.Api.Middlewares;
 using Helsi.Todo.Application;
 using Helsi.Todo.Infrastructure;
@@ -12,6 +13,8 @@ builder.Services.AddSwaggerGen();
 // Extension methods can be redundant here, but I want to show the way that I prefer to register dependencies.
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+// Is this case validation my look redundant, but I want to show that I know that it is important and I know how to use it.
+builder.Services.AddFluentValidationAutoValidation();
 
 var app = builder.Build();
 
