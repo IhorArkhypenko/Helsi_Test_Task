@@ -10,12 +10,12 @@ namespace Helsi.Todo.Api.Controllers;
 [Route("tasklists")]
 public class TaskListsController : ControllerBase
 {
-     private readonly ITaskListRepository _taskListRepo;
+      private readonly ITaskListService _taskListService;
 
-     public TaskListsController(ITaskListRepository taskListRepo)
-     {
-         _taskListRepo = taskListRepo;
-     }
+      public TaskListsController(ITaskListService taskListService)
+      {
+          _taskListService = taskListService;
+      }
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateTaskListRequest request, CancellationToken ct)
@@ -25,11 +25,8 @@ public class TaskListsController : ControllerBase
 
         try
         {
-            var taskList = new TaskList(userId, request.Title);
-            await _taskListRepo.AddAsync(taskList, ct);
-            await _taskListRepo.SaveChangesAsync(ct);
-
-            return CreatedAtAction(nameof(GetById), new { id = taskList.Id });
+            var id = await _taskListService.CreateAsync(userId, request.Title, ct);
+            return CreatedAtAction(nameof(GetById), new { id }, new { id });
         }
         catch (ArgumentException ex)
         {
@@ -43,16 +40,13 @@ public class TaskListsController : ControllerBase
         if (!HttpContext.TryGetUserId(out var userId))
             return BadRequest("X-User-Id header is required");
 
-        var pagedTaskLists = await _taskListRepo.GetForUserAsync(userId, page, size, ct);
+        var paged = await _taskListService.GetPagedAsync(userId, page, size, ct);
 
-        var listItemDtos = pagedTaskLists.Items
+        var items = paged.Items
             .Select(x => new TaskListListItemDto(x.Id, x.Title))
             .ToList();
 
-        var response = new PagedResponse<TaskListListItemDto>(
-            listItemDtos, pagedTaskLists.Total, pagedTaskLists.Page, pagedTaskLists.Size);
-
-        return Ok(response);
+        return Ok(new PagedResponse<TaskListListItemDto>(items, paged.Total, paged.Page, paged.Size));
     }
 
     [HttpGet("{taskListId:guid}")]
@@ -61,16 +55,134 @@ public class TaskListsController : ControllerBase
         if (!HttpContext.TryGetUserId(out var userId))
             return BadRequest("X-User-Id header is required");
 
-        var taskList = await _taskListRepo.GetByIdAsync(taskListId, ct);
-        if (taskList is null)
-            return NotFound();
+        try
+        {
+            var list = await _taskListService.GetByIdAsync(userId, taskListId, ct);
+            if (list is null)
+                return NotFound();
 
-        if (taskList.OwnerId != userId && !await _taskListRepo.IsUserLinkedAsync(taskList.Id, userId, ct))
+            return Ok(new TaskListDetailsDto(list.Id, list.Title, list.OwnerId, list.CreatedAtUtc));
+        }
+        catch (UnauthorizedAccessException)
+        {
             return Forbid();
+        }
+    }
 
-        var taskListDetailsDto =
-            new TaskListDetailsDto(taskList.Id, taskList.Title, taskList.OwnerId, taskList.CreatedAtUtc);
+    [HttpPut("{taskListId:guid}")]
+    public async Task<IActionResult> Rename(Guid taskListId, [FromBody] RenameTaskListRequest request, CancellationToken ct)
+    {
+        if (!HttpContext.TryGetUserId(out var userId))
+            return BadRequest("X-User-Id header is required");
 
-        return Ok(taskListDetailsDto);
+        try
+        {
+            await _taskListService.RenameAsync(userId, taskListId, request.Title, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationProblem(detail: ex.Message);
+        }
+    }
+
+    [HttpDelete("{taskListId:guid}")]
+    public async Task<IActionResult> Delete(Guid taskListId, CancellationToken ct)
+    {
+        if (!HttpContext.TryGetUserId(out var userId))
+            return BadRequest("X-User-Id header is required");
+
+        try
+        {
+            await _taskListService.DeleteAsync(userId, taskListId, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpPost("{taskListId:guid}/users/{targetUserId:guid}")]
+    public async Task<IActionResult> AddUser(Guid taskListId, Guid targetUserId, CancellationToken ct)
+    {
+        if (!HttpContext.TryGetUserId(out var userId))
+            return BadRequest("X-User-Id header is required");
+
+        try
+        {
+            await _taskListService.AddUserAsync(userId, taskListId, targetUserId, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
+
+    [HttpGet("{taskListId:guid}/users")]
+    public async Task<IActionResult> GetUsers(Guid taskListId, CancellationToken ct)
+    {
+        if (!HttpContext.TryGetUserId(out var userId))
+            return BadRequest("X-User-Id header is required");
+
+        try
+        {
+            var userIds = await _taskListService.GetUsersAsync(userId, taskListId, ct);
+            return Ok(new TaskListUsersDto(userIds));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpDelete("{taskListId:guid}/users/{targetUserId:guid}")]
+    public async Task<IActionResult> RemoveUser(Guid taskListId, Guid targetUserId, CancellationToken ct)
+    {
+        if (!HttpContext.TryGetUserId(out var userId))
+            return BadRequest("X-User-Id header is required");
+
+        try
+        {
+            await _taskListService.RemoveUserAsync(userId, taskListId, targetUserId, ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 }
