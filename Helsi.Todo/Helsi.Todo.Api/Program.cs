@@ -1,3 +1,4 @@
+using Helsi.Todo.Api.Middlewares;
 using Helsi.Todo.Application;
 using Helsi.Todo.Infrastructure;
 
@@ -21,5 +22,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseHttpsRedirection();
+app.UseMiddleware<ProblemDetailsMiddleware>();
 app.MapControllers();
 app.Run();
