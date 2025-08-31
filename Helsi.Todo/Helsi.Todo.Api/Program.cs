@@ -1,3 +1,4 @@
+using Helsi.Todo.Application;
 using Helsi.Todo.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Extension methods can be redundant here, but I want to show the way that I prefer to register dependencies.
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
