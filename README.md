@@ -1,6 +1,8 @@
 # Helsi_Test_Task
 Simple notes management API.
 
+You can find the task in the project files.
+
 ## How to run
 1. **Install Postgres.**
 2. **Clone this repository.**
