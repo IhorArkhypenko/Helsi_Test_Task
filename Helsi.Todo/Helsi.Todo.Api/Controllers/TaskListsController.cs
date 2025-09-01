@@ -15,6 +15,9 @@ public class TaskListsController : ControllerBase
           _taskListService = taskListService;
       }
 
+      /// <summary>
+      /// Create a new task list.
+      /// </summary>
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromHeader]Guid userId,
@@ -25,6 +28,9 @@ public class TaskListsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { taskListId = id }, new { id });
     }
 
+    /// <summary>
+    /// Get all task lists for the user (with pagination).
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> Get(
         [FromHeader]Guid userId,
@@ -41,6 +47,9 @@ public class TaskListsController : ControllerBase
         return Ok(new PagedResponse<TaskListListItemDto>(items, paged.Total, paged.Page, paged.Size));
     }
 
+    /// <summary>
+    /// Get task list details by ID.
+    /// </summary>
     [HttpGet("{taskListId:guid}")]
     public async Task<IActionResult> GetById([FromHeader]Guid userId, Guid taskListId, CancellationToken ct)
     {
@@ -51,6 +60,9 @@ public class TaskListsController : ControllerBase
         return Ok(new TaskListDetailsDto(list.Id, list.Title, list.OwnerId, list.CreatedAtUtc));
     }
 
+    /// <summary>
+    /// Rename an existing task list.
+    /// </summary>
     [HttpPut("{taskListId:guid}")]
     public async Task<IActionResult> Rename(
         [FromHeader]Guid userId,
@@ -62,6 +74,9 @@ public class TaskListsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Delete a task list by ID.
+    /// </summary>
     [HttpDelete("{taskListId:guid}")]
     public async Task<IActionResult> Delete(
         [FromHeader]Guid userId,
@@ -72,6 +87,9 @@ public class TaskListsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Share task list with another user.
+    /// </summary>
     [HttpPost("{taskListId:guid}/users/{targetUserId:guid}")]
     public async Task<IActionResult> AddUser(
         [FromHeader]Guid userId,
@@ -83,6 +101,9 @@ public class TaskListsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Get all users assigned to the task list.
+    /// </summary>
     [HttpGet("{taskListId:guid}/users")]
     public async Task<IActionResult> GetUsers(
         [FromHeader]Guid userId,
@@ -93,6 +114,9 @@ public class TaskListsController : ControllerBase
         return Ok(new TaskListUsersDto(userIds));
     }
 
+    /// <summary>
+    /// Remove a user from the task list.
+    /// </summary>
     [HttpDelete("{taskListId:guid}/users/{targetUserId:guid}")]
     public async Task<IActionResult> RemoveUser(
         [FromHeader]Guid userId,
